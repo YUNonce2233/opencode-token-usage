@@ -1,0 +1,28 @@
+{
+  "name": "opencode-token-usage",
+  "version": "0.1.0",
+  "description": "OpenCode token usage statistics plugin — automatic per-reply badge + token_usage tool. (opencode token 用量统计插件)",
+  "type": "module",
+  "module": "plugin/opencode-token-usage.ts",
+  "files": [
+    "plugin/",
+    "command/"
+  ],
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/plugin.test.mjs",
+    "check": "node --experimental-strip-types --check plugin/opencode-token-usage.ts"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "token",
+    "usage",
+    "tokens",
+    "statistics"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.18.2",
+    "@opencode-ai/sdk": "^1.18.2"
+  }
+}
