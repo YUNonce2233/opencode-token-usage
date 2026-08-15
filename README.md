@@ -185,6 +185,6 @@ This project is open-sourced under the [MIT License](LICENSE). Use, modification
 
 ## 致谢
 
-本插件由 **YUN**（GitHub: [YUNonce2233](https://github.com/YUNonce2233)）与 **AI 助手** 共同开发。灵感源自 Codex++ 脚本市场插件 *Codex Token Usage*（Albert_Luo），并基于 opencode 插件事件机制重新实现。
+本插件由 **YUN**（GitHub: [YUNonce2233](https://github.com/YUNonce2233)）与 **小佳 Agent** 共同开发。灵感源自 Codex++ 脚本市场插件 *Codex Token Usage*（Albert_Luo），并基于 opencode 插件事件机制重新实现。
 
-Developed by **YUN** (GitHub: [YUNonce2233](https://github.com/YUNonce2233)) together with an **AI assistant**. Inspired by the *Codex Token Usage* plugin (by Albert_Luo) from the Codex++ script marketplace, reimplemented on opencode's plugin event system.
+Developed by **YUN** (GitHub: [YUNonce2233](https://github.com/YUNonce2233)) together with **Xiaojia Agent**. Inspired by the *Codex Token Usage* plugin (by Albert_Luo) from the Codex++ script marketplace, reimplemented on opencode's plugin event system.
