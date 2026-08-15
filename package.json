@@ -6,8 +6,12 @@
   "module": "plugin/opencode-token-usage.ts",
   "files": [
     "plugin/",
-    "command/"
+    "command/",
+    "bin/"
   ],
+  "bin": {
+    "opencode-token-usage": "bin/install.cjs"
+  },
   "scripts": {
     "test": "node --experimental-strip-types --test test/plugin.test.mjs",
     "check": "node --experimental-strip-types --check plugin/opencode-token-usage.ts"

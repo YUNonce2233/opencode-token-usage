@@ -59,6 +59,28 @@
 
 > 前置要求：已安装 opencode 1.x，并已配置 `~/.config/opencode/`（Windows 为 `C:\Users\<用户名>\.config\opencode\`）。
 
+### 使用 npx
+
+```bash
+npx github:YUNonce2233/opencode-token-usage
+```
+
+安装器会把 `plugin/opencode-token-usage.ts` 复制到 `~/.config/opencode/plugins/`，把 `command/token-usage.md` 复制到 `~/.config/opencode/command/`，并打印注册所需的配置行。
+
+### 使用 Bash
+
+```bash
+curl -sSL https://raw.githubusercontent.com/YUNonce2233/opencode-token-usage/master/install.sh | bash
+```
+
+可通过环境变量自定义安装目录：
+
+```bash
+OPENCODE_CONFIG_DIR="$HOME/.config/opencode" bash -c "$(curl -sSL https://raw.githubusercontent.com/YUNonce2233/opencode-token-usage/master/install.sh)"
+```
+
+### 手动安装
+
 1. 将 `plugin/opencode-token-usage.ts` 复制到 `~/.config/opencode/plugins/`。
 2. 在 `~/.config/opencode/opencode.json` 的 `plugin` 数组追加文件 URL：
 
@@ -109,6 +131,8 @@ npm test
 | --- | --- |
 | `plugin/opencode-token-usage.ts` | 插件主代码（ESM 单文件） |
 | `command/token-usage.md` | `/token-usage` 命令定义 |
+| `bin/install.js` | npx 安装入口 |
+| `install.sh` | Bash 安装脚本 |
 | `test/plugin.test.mjs` | 集成测试 |
 | `README.md` | 本说明 |
 | `package.json` | 依赖与测试脚本 |
