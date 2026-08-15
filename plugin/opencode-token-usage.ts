@@ -169,12 +169,12 @@ function formatTurn(t: TurnRecord): string {
   const hitRate = t.tokens.input + t.tokens.cacheRead > 0 ? (t.tokens.cacheRead / (t.tokens.input + t.tokens.cacheRead)) * 100 : 0
   const total = t.tokens.input + t.tokens.output + t.tokens.reasoning + t.tokens.cacheRead + t.tokens.cacheWrite
   const parts = [
-    `[Token 统计] 本轮合计 ${fmt(total)} tok · 输入 ${fmt(t.tokens.input)} · 输出 ${fmt(t.tokens.output)}`,
-    `缓存读 ${fmt(t.tokens.cacheRead)} · 缓存命中率 ${hitRate.toFixed(1)}% · 1 次调用`,
+    `[Token 统计] 本轮合计 ${fmt(total)} tok · 输入 ${fmt(t.tokens.input)} tok · 输出 ${fmt(t.tokens.output)} tok`,
+    `缓存读 ${fmt(t.tokens.cacheRead)} tok · 缓存命中率 ${hitRate.toFixed(1)}% · 1 次调用`,
   ]
   if (t.contextLimit > 0) {
     const pct = t.contextUsed > 0 ? ((t.contextUsed / t.contextLimit) * 100).toFixed(1) : "0"
-    parts.push(`上下文 ${fmt(t.contextUsed)}/${fmt(t.contextLimit)}(${pct}%)`)
+    parts.push(`上下文 ${fmt(t.contextUsed)}/${fmt(t.contextLimit)} tok(${pct}%)`)
   }
   return `${parts.join(" · ")} ✓`
 }
@@ -186,12 +186,12 @@ function formatSession(s: SessionRecord | undefined): string {
   const grandTotal = totals.input + totals.output + totals.reasoning + totals.cacheRead + totals.cacheWrite
   const last = s.turns[s.turns.length - 1]
   const parts = [
-    `[Token 统计] 会话合计 ${fmt(grandTotal)} tok · 输入 ${fmt(totals.input)} · 输出 ${fmt(totals.output)}`,
-    `缓存读 ${fmt(totals.cacheRead)} · 缓存命中率 ${hitRate.toFixed(1)}% · ${totals.calls} 次调用`,
+    `[Token 统计] 会话合计 ${fmt(grandTotal)} tok · 输入 ${fmt(totals.input)} tok · 输出 ${fmt(totals.output)} tok`,
+    `缓存读 ${fmt(totals.cacheRead)} tok · 缓存命中率 ${hitRate.toFixed(1)}% · ${totals.calls} 次调用`,
   ]
   if (last.contextLimit > 0) {
     const pct = last.contextUsed > 0 ? ((last.contextUsed / last.contextLimit) * 100).toFixed(1) : "0"
-    parts.push(`上下文 ${fmt(last.contextUsed)}/${fmt(last.contextLimit)}(${pct}%)`)
+    parts.push(`上下文 ${fmt(last.contextUsed)}/${fmt(last.contextLimit)} tok(${pct}%)`)
   }
   if (totals.elapsedMs > 0) parts.push(`耗时 ${formatDuration(totals.elapsedMs)}`)
   return parts.join(" · ")
@@ -199,8 +199,8 @@ function formatSession(s: SessionRecord | undefined): string {
 
 function formatSummary(label: string, sessionCount: number, totals: Totals, grandTotal: number, hitRate: number): string {
   const parts = [
-    `[Token 统计] ${label}合计 ${fmt(grandTotal)} tok · 输入 ${fmt(totals.input)} · 输出 ${fmt(totals.output)}`,
-    `缓存读 ${fmt(totals.cacheRead)} · 缓存命中率 ${hitRate.toFixed(1)}% · ${totals.calls} 次调用 · ${sessionCount} 个会话`,
+    `[Token 统计] ${label}合计 ${fmt(grandTotal)} tok · 输入 ${fmt(totals.input)} tok · 输出 ${fmt(totals.output)} tok`,
+    `缓存读 ${fmt(totals.cacheRead)} tok · 缓存命中率 ${hitRate.toFixed(1)}% · ${totals.calls} 次调用 · ${sessionCount} 个会话`,
   ]
   if (totals.elapsedMs > 0) parts.push(`耗时 ${formatDuration(totals.elapsedMs)}`)
   return parts.join(" · ")
