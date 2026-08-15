@@ -237,6 +237,13 @@ const TokenUsagePlugin: Plugin = async (ctx) => {
       updating.add(info.id)
       try {
         const result = await client.session.message({ sessionID: info.sessionID, messageID: info.id })
+        if (result?.error) {
+          await appendFile(
+            HISTORY_LOG_PATH,
+            `[${new Date().toISOString()}] badge-fetch-error session=${info.sessionID} msg=${info.id}: ${JSON.stringify(result.error).slice(0, 300)}\n`,
+          ).catch(() => {})
+          return
+        }
         const parts = result.data?.parts
         const part = Array.isArray(parts)
           ? [...parts].reverse().find((candidate) => candidate.type === "text" && !(candidate as any).ignored)
