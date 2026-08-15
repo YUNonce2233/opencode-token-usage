@@ -19,6 +19,8 @@
 
 回复底部会自动出现类似下面的统计条：
 
+![badge-example](docs/badge-example.png)
+
 ```
 <!-- opencode-token-usage -->
 [Token 统计] 本轮合计 62,625 tok · 输入 2,049 · 输出 1,696 · 缓存读 58,880 · 缓存命中率 96.6% · 1 次调用 · 上下文 60,929/128,000(47.6%) ✓
@@ -131,8 +133,9 @@ npm test
 | --- | --- |
 | `plugin/opencode-token-usage.ts` | 插件主代码（ESM 单文件） |
 | `command/token-usage.md` | `/token-usage` 命令定义 |
-| `bin/install.js` | npx 安装入口 |
+| `bin/install.cjs` | npx 安装入口 |
 | `install.sh` | Bash 安装脚本 |
+| `docs/badge-example.png` | 输出示例截图 |
 | `test/plugin.test.mjs` | 集成测试 |
 | `README.md` | 本说明 |
 | `package.json` | 依赖与测试脚本 |
