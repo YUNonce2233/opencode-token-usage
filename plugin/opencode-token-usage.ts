@@ -221,7 +221,10 @@ const TokenUsagePlugin: Plugin = async (ctx) => {
   const updating = new Set<string>()
   try {
     await mkdir(DATA_DIR, { recursive: true })
-    await appendFile(HISTORY_LOG_PATH, `[${new Date().toISOString()}] plugin loaded sessionDir=${ctx.directory}\n`)
+    await appendFile(
+      HISTORY_LOG_PATH,
+      `[${new Date().toISOString()}] plugin loaded sessionDir=${ctx.directory} serverUrl=${ctx.serverUrl} hasPass=${process.env.OPENCODE_SERVER_PASSWORD ? "yes" : "no"}\n`,
+    )
   } catch {}
   return {
     event: async ({ event }) => {
@@ -246,7 +249,14 @@ const TokenUsagePlugin: Plugin = async (ctx) => {
           partID: part.id,
           part: { ...part, text },
         })
-      } catch {}
+      } catch (error) {
+        try {
+          await appendFile(
+            HISTORY_LOG_PATH,
+            `[${new Date().toISOString()}] badge-append-error session=${info.sessionID} msg=${info.id}: ${error instanceof Error ? error.message : String(error)}\n`,
+          )
+        } catch {}
+      }
       finally {
         updating.delete(info.id)
       }
