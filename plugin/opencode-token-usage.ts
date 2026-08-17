@@ -51,6 +51,12 @@ const num = (v: unknown) => {
 
 const fmt = (n: number) => n.toLocaleString("en-US")
 
+const fmtCompact = (n: number) => {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}m`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}k`
+  return fmt(n)
+}
+
 async function loadLedger(): Promise<Ledger> {
   if (ledger) return ledger
   try {
@@ -189,14 +195,16 @@ function formatTurn(t: TurnRecord): string {
   const hitRate = t.tokens.input + t.tokens.cacheRead > 0 ? (t.tokens.cacheRead / (t.tokens.input + t.tokens.cacheRead)) * 100 : 0
   const total = t.tokens.input + t.tokens.output + t.tokens.reasoning + t.tokens.cacheRead + t.tokens.cacheWrite
   const parts = [
-    `[Token 统计] 本轮合计 ${fmt(total)} tok · 输入 ${fmt(t.tokens.input)} tok · 输出 ${fmt(t.tokens.output)} tok`,
-    `缓存读 ${fmt(t.tokens.cacheRead)} tok · 缓存命中率 ${hitRate.toFixed(1)}% · 1 次调用`,
+    `[Token] ${fmtCompact(total)}`,
+    `入 ${fmtCompact(t.tokens.input)}`,
+    `出 ${fmtCompact(t.tokens.output)}`,
+    `缓存 ${fmtCompact(t.tokens.cacheRead)}/${hitRate.toFixed(1)}%`,
   ]
-  if (t.ttftMs > 0) parts.push(`首 token ${(t.ttftMs / 1000).toFixed(1)}s`)
+  if (t.ttftMs > 0) parts.push(`首字 ${(t.ttftMs / 1000).toFixed(1)}s`)
   if (t.tokensPerSec > 0) parts.push(`${t.tokensPerSec.toFixed(1)} tok/s`)
   if (t.contextLimit > 0) {
     const pct = t.contextUsed > 0 ? ((t.contextUsed / t.contextLimit) * 100).toFixed(1) : "0"
-    parts.push(`上下文 ${fmt(t.contextUsed)}/${fmt(t.contextLimit)} tok(${pct}%)`)
+    parts.push(`上下文 ${fmtCompact(t.contextUsed)}/${fmtCompact(t.contextLimit)} ${pct}%`)
   }
   return `${parts.join(" · ")} ✓`
 }
