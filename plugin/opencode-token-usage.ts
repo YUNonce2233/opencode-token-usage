@@ -115,14 +115,14 @@ const formatDuration = (ms: number) => {
 function computeLatency(info: any, parts: any[] | undefined, tokens: TokenBreakdown): { ttftMs: number; tokensPerSec: number } {
   const messageCreated = num(info?.time?.created)
   const times = (Array.isArray(parts) ? parts : [])
-    .filter((p) => p?.type === "text" && !(p as any)?.ignored)
-    .map((p) => ({ created: num(p?.time?.created), completed: num(p?.time?.completed) }))
-    .filter((t) => t.created > 0 || t.completed > 0)
+    .filter((p) => p?.type === "text" || p?.type === "reasoning")
+    .map((p) => ({ start: num(p?.time?.start), end: num(p?.time?.end) }))
+    .filter((t) => t.start > 0 || t.end > 0)
   if (!times.length || !messageCreated) return { ttftMs: 0, tokensPerSec: 0 }
   const first = times[0]
   const last = times[times.length - 1]
-  const ttftMs = Math.max(0, first.completed - messageCreated)
-  const genMs = Math.max(0, last.completed - first.created)
+  const ttftMs = Math.max(0, (first.start || first.end) - messageCreated)
+  const genMs = Math.max(0, (last.end || last.start) - (first.start || first.end))
   const outTokens = tokens.output + tokens.reasoning
   const tokensPerSec = genMs > 0 && outTokens > 0 ? outTokens / (genMs / 1000) : 0
   return { ttftMs, tokensPerSec }
@@ -299,8 +299,8 @@ const TokenUsagePlugin: Plugin = async (ctx) => {
               .map((p) => ({
                 type: p?.type,
                 ignored: !!(p as any)?.ignored,
-                created: (p as any)?.time?.created ?? null,
-                completed: (p as any)?.time?.completed ?? null,
+                start: (p as any)?.time?.start ?? null,
+                end: (p as any)?.time?.end ?? null,
                 hasTime: !!p?.time,
                 textLen: typeof p?.text === "string" ? p.text.length : null,
               }))

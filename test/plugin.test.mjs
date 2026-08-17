@@ -21,11 +21,11 @@ function makeServer({ text }) {
     const id = messageIDMatch?.[1] ?? url.pathname.split("/").pop()
     if (req.method === "GET" && url.pathname.startsWith(`/session/${SESSION}/message/`)) {
       calls.message += 1
-      const created = Date.now() - 49000
+      const start = Date.now() - 48000
       return send(200, {
         info: { id, sessionID: SESSION, role: "assistant" },
         parts: [
-          { id: `${id}-text`, type: "text", text: texts.get(id) ?? text, ignored: false, time: { created, completed: created + 24000 } },
+          { id: `${id}-text`, type: "text", text: texts.get(id) ?? text, ignored: false, time: { start, end: start + 24000 } },
         ],
       })
     }
