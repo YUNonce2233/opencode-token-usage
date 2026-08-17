@@ -51,12 +51,6 @@ const num = (v: unknown) => {
 
 const fmt = (n: number) => n.toLocaleString("en-US")
 
-const fmtCompact = (n: number) => {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}m`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}k`
-  return fmt(n)
-}
-
 async function loadLedger(): Promise<Ledger> {
   if (ledger) return ledger
   try {
@@ -195,16 +189,14 @@ function formatTurn(t: TurnRecord): string {
   const hitRate = t.tokens.input + t.tokens.cacheRead > 0 ? (t.tokens.cacheRead / (t.tokens.input + t.tokens.cacheRead)) * 100 : 0
   const total = t.tokens.input + t.tokens.output + t.tokens.reasoning + t.tokens.cacheRead + t.tokens.cacheWrite
   const parts = [
-    `[Token] ${fmtCompact(total)}`,
-    `入 ${fmtCompact(t.tokens.input)}`,
-    `出 ${fmtCompact(t.tokens.output)}`,
-    `缓存 ${fmtCompact(t.tokens.cacheRead)}/${hitRate.toFixed(1)}%`,
+    `[Token 统计] 本轮合计 ${fmt(total)} tok · 输入 ${fmt(t.tokens.input)} tok · 输出 ${fmt(t.tokens.output)} tok`,
+    `缓存读 ${fmt(t.tokens.cacheRead)} tok · 缓存命中率 ${hitRate.toFixed(1)}% · 1 次调用`,
   ]
   if (t.ttftMs > 0) parts.push(`首字 ${(t.ttftMs / 1000).toFixed(1)}s`)
   if (t.tokensPerSec > 0) parts.push(`${t.tokensPerSec.toFixed(1)} tok/s`)
   if (t.contextLimit > 0) {
     const pct = t.contextUsed > 0 ? ((t.contextUsed / t.contextLimit) * 100).toFixed(1) : "0"
-    parts.push(`上下文 ${fmtCompact(t.contextUsed)}/${fmtCompact(t.contextLimit)} ${pct}%`)
+    parts.push(`上下文 ${fmt(t.contextUsed)}/${fmt(t.contextLimit)} tok(${pct}%)`)
   }
   return `${parts.join(" · ")} ✓`
 }
@@ -227,7 +219,7 @@ function formatSession(s: SessionRecord | undefined): string {
   const ttftTurns = s.turns.filter((t) => t.ttftMs > 0)
   if (ttftTurns.length) {
     const avgTtft = ttftTurns.reduce((a, t) => a + t.ttftMs, 0) / ttftTurns.length
-    parts.push(`首 token 平均 ${(avgTtft / 1000).toFixed(1)}s`)
+    parts.push(`首字平均 ${(avgTtft / 1000).toFixed(1)}s`)
   }
   const tpsTurns = s.turns.filter((t) => t.tokensPerSec > 0)
   if (tpsTurns.length) {
@@ -298,9 +290,26 @@ const TokenUsagePlugin: Plugin = async (ctx) => {
         try {
           await appendFile(
             HISTORY_LOG_PATH,
-            `[${new Date().toISOString()}] session=${info.sessionID} msg=${info.id} ttft=${latency.ttftMs}ms tokps=${latency.tokensPerSec.toFixed(1)}\n`,
+            `[${new Date().toISOString()}] session=${info.sessionID} msg=${info.id} ttft=${latency.ttftMs}ms tokps=${latency.tokensPerSec.toFixed(1)} parts=${Array.isArray(parts) ? parts.length : "none"}\n`,
           )
         } catch {}
+        if (latency.ttftMs === 0) {
+          try {
+            const times = (Array.isArray(parts) ? parts : [])
+              .map((p) => ({
+                type: p?.type,
+                ignored: !!(p as any)?.ignored,
+                created: (p as any)?.time?.created ?? null,
+                completed: (p as any)?.time?.completed ?? null,
+                hasTime: !!p?.time,
+                textLen: typeof p?.text === "string" ? p.text.length : null,
+              }))
+            await appendFile(
+              HISTORY_LOG_PATH,
+              `[${new Date().toISOString()}] badge-latency-dump msg=${info.id} msgCreated=${info?.time?.created ?? "null"} parts=${JSON.stringify(times).slice(0, 1500)}\n`,
+            )
+          } catch {}
+        }
         const text = `${part.text.trimEnd()}\n\n${BADGE_MARKER}\n\`${formatTurn(turn)}\``
         await client.part.update({
           sessionID: info.sessionID,
