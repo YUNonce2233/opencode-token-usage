@@ -21,9 +21,12 @@ function makeServer({ text }) {
     const id = messageIDMatch?.[1] ?? url.pathname.split("/").pop()
     if (req.method === "GET" && url.pathname.startsWith(`/session/${SESSION}/message/`)) {
       calls.message += 1
+      const created = Date.now() - 49000
       return send(200, {
         info: { id, sessionID: SESSION, role: "assistant" },
-        parts: [{ id: `${id}-text`, type: "text", text: texts.get(id) ?? text, ignored: false }],
+        parts: [
+          { id: `${id}-text`, type: "text", text: texts.get(id) ?? text, ignored: false, time: { created, completed: created + 24000 } },
+        ],
       })
     }
     if (req.method === "PATCH" && url.pathname.startsWith(`/session/${SESSION}/message/`)) {
@@ -98,6 +101,8 @@ test("完成的主 agent 回复自动追加 badge 且去重", async () => {
     assert.ok(badge.includes("[Token 统计]"), "应含统计文本")
     assert.ok(/✓\s*$/.test(badge.trim().replace(/`$/, "")), "行尾应有 ✓")
     assert.ok(/缓存命中率 96\.6%/.test(badge), "应含缓存命中率")
+    assert.ok(/首 token \d+\.\d+s/.test(badge), "应含首 token 平均时间")
+    assert.ok(/\d+\.\d tok\/s/.test(badge), "应含 tok/s 速率")
   }, { homeDir })
 })
 

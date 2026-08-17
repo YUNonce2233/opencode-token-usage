@@ -21,6 +21,8 @@ type TurnRecord = {
   tokens: TokenBreakdown
   cost: number
   elapsedMs: number
+  ttftMs: number
+  tokensPerSec: number
   contextUsed: number
   contextLimit: number
 }
@@ -110,6 +112,22 @@ const formatDuration = (ms: number) => {
   return `${seconds.toFixed(1)}s`
 }
 
+function computeLatency(info: any, parts: any[] | undefined, tokens: TokenBreakdown): { ttftMs: number; tokensPerSec: number } {
+  const messageCreated = num(info?.time?.created)
+  const times = (Array.isArray(parts) ? parts : [])
+    .filter((p) => p?.type === "text" && !(p as any)?.ignored)
+    .map((p) => ({ created: num(p?.time?.created), completed: num(p?.time?.completed) }))
+    .filter((t) => t.created > 0 || t.completed > 0)
+  if (!times.length || !messageCreated) return { ttftMs: 0, tokensPerSec: 0 }
+  const first = times[0]
+  const last = times[times.length - 1]
+  const ttftMs = Math.max(0, first.completed - messageCreated)
+  const genMs = Math.max(0, last.completed - first.created)
+  const outTokens = tokens.output + tokens.reasoning
+  const tokensPerSec = genMs > 0 && outTokens > 0 ? outTokens / (genMs / 1000) : 0
+  return { ttftMs, tokensPerSec }
+}
+
 async function recordAssistantMessage(info: any) {
   const sessionID = String(info?.sessionID ?? "")
   const messageID = String(info?.id ?? "")
@@ -139,6 +157,8 @@ async function recordAssistantMessage(info: any) {
     tokens,
     cost: num(info.cost),
     elapsedMs,
+    ttftMs: 0,
+    tokensPerSec: 0,
     contextUsed,
     contextLimit,
   }
@@ -172,6 +192,8 @@ function formatTurn(t: TurnRecord): string {
     `[Token 统计] 本轮合计 ${fmt(total)} tok · 输入 ${fmt(t.tokens.input)} tok · 输出 ${fmt(t.tokens.output)} tok`,
     `缓存读 ${fmt(t.tokens.cacheRead)} tok · 缓存命中率 ${hitRate.toFixed(1)}% · 1 次调用`,
   ]
+  if (t.ttftMs > 0) parts.push(`首 token ${(t.ttftMs / 1000).toFixed(1)}s`)
+  if (t.tokensPerSec > 0) parts.push(`${t.tokensPerSec.toFixed(1)} tok/s`)
   if (t.contextLimit > 0) {
     const pct = t.contextUsed > 0 ? ((t.contextUsed / t.contextLimit) * 100).toFixed(1) : "0"
     parts.push(`上下文 ${fmt(t.contextUsed)}/${fmt(t.contextLimit)} tok(${pct}%)`)
@@ -194,6 +216,16 @@ function formatSession(s: SessionRecord | undefined): string {
     parts.push(`上下文 ${fmt(last.contextUsed)}/${fmt(last.contextLimit)} tok(${pct}%)`)
   }
   if (totals.elapsedMs > 0) parts.push(`耗时 ${formatDuration(totals.elapsedMs)}`)
+  const ttftTurns = s.turns.filter((t) => t.ttftMs > 0)
+  if (ttftTurns.length) {
+    const avgTtft = ttftTurns.reduce((a, t) => a + t.ttftMs, 0) / ttftTurns.length
+    parts.push(`首 token 平均 ${(avgTtft / 1000).toFixed(1)}s`)
+  }
+  const tpsTurns = s.turns.filter((t) => t.tokensPerSec > 0)
+  if (tpsTurns.length) {
+    const avgTps = tpsTurns.reduce((a, t) => a + t.tokensPerSec, 0) / tpsTurns.length
+    parts.push(`平均 ${avgTps.toFixed(1)} tok/s`)
+  }
   return parts.join(" · ")
 }
 
@@ -203,6 +235,8 @@ function formatSummary(label: string, sessionCount: number, totals: Totals, gran
     `缓存读 ${fmt(totals.cacheRead)} tok · 缓存命中率 ${hitRate.toFixed(1)}% · ${totals.calls} 次调用 · ${sessionCount} 个会话`,
   ]
   if (totals.elapsedMs > 0) parts.push(`耗时 ${formatDuration(totals.elapsedMs)}`)
+  const outTokens = totals.output + totals.reasoning
+  if (totals.elapsedMs > 0 && outTokens > 0) parts.push(`平均 ${(outTokens / (totals.elapsedMs / 1000)).toFixed(1)} tok/s`)
   return parts.join(" · ")
 }
 
@@ -249,6 +283,16 @@ const TokenUsagePlugin: Plugin = async (ctx) => {
           ? [...parts].reverse().find((candidate) => candidate.type === "text" && !(candidate as any).ignored)
           : undefined
         if (!part || part.type !== "text" || part.text.includes(BADGE_MARKER)) return
+        const latency = computeLatency(info, parts, turn.tokens)
+        turn.ttftMs = latency.ttftMs
+        turn.tokensPerSec = latency.tokensPerSec
+        persist()
+        try {
+          await appendFile(
+            HISTORY_LOG_PATH,
+            `[${new Date().toISOString()}] session=${info.sessionID} msg=${info.id} ttft=${latency.ttftMs}ms tokps=${latency.tokensPerSec.toFixed(1)}\n`,
+          )
+        } catch {}
         const text = `${part.text.trimEnd()}\n\n${BADGE_MARKER}\n\`${formatTurn(turn)}\``
         await client.part.update({
           sessionID: info.sessionID,
